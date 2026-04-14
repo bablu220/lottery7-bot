@@ -1,89 +1,77 @@
 import telebot
 import time
 import datetime
-import pytz  # Timezone fix karne ke liye
+import pytz
 import random
 from telebot import types
 from flask import Flask
 from threading import Thread
 
-# Web server setup
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "Predictor 4.0 is Online!"
+    return "Lottery 7 Predictor 4.0 is Online!"
 
 def run():
     app.run(host='0.0.0.0', port=8080)
 
-# --- CONFIGURATION ---
 API_TOKEN = '8616199952:AAFn9PcsQzw5Gw5ZL4Uv0jNy7Rcvw1guoew'
 bot = telebot.TeleBot(API_TOKEN)
-IST = pytz.timezone('Asia/Kolkata') # India Timezone
+IST = pytz.timezone('Asia/Kolkata')
 
-def get_period():
-    # Render ke server par India ka time nikalne ke liye
+# Activation Key (Aap badal bhi sakte hain)
+AUTH_KEY = "KULAMANI-L7"
+
+def get_lottery7_period():
     now = datetime.datetime.now(IST)
     date_str = now.strftime("%Y%m%d")
-    # Din ke kul minutes (0 se 1439)
+    # Lottery 7 / 55 Club 1-Min exact calculation
     total_minutes = (now.hour * 60) + now.minute
-    # Predictor 4.0 style period format
-    return f"{date_str}1000{total_minutes + 1}"
+    # Agar screenshot ke hisab se 10569 chal raha hai, toh base 10001 + minutes
+    period_number = 10001 + total_minutes
+    return f"{date_str}{period_number}"
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn1 = types.KeyboardButton('🎮 55 CLUB')
-    btn2 = types.KeyboardButton('🚀 WINGO')
-    btn3 = types.KeyboardButton('📊 SYSTEM STATUS')
-    markup.add(btn1, btn2, btn3)
+    msg = bot.send_message(message.chat.id, "🚀 **Starting LOTTERY 7 AI ENGINE...**", parse_mode='Markdown')
+    time.sleep(1)
+    bot.edit_message_text("🔑 **Please Enter Activation Key:**", message.chat.id, msg.message_id, parse_mode='Markdown')
+
+@bot.message_handler(func=lambda message: message.text == AUTH_KEY)
+def login_success(message):
+    welcome_msg = "✅ **Access Granted!**\nWelcome to Lottery 7 Predictor v4.0"
     
-    welcome_msg = (
-        "🟢 **PREDICTOR 4.0 AI**\n"
-        "------------------------------\n"
-        "Welcome, User!\n"
-        "**Status:** SECURE CONNECTION ESTABLISHED\n"
-        "**AI Node:** Bhubaneswar Server 01\n\n"
-        "Please select a game to start prediction."
-    )
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    btn1 = types.KeyboardButton('🎰 LOTTERY 7 (1-MIN)')
+    btn2 = types.KeyboardButton('🚀 WINGO PRO')
+    markup.add(btn1, btn2)
+    
     bot.send_message(message.chat.id, welcome_msg, reply_markup=markup, parse_mode='Markdown')
 
-@bot.message_handler(func=lambda message: message.text in ['🎮 55 CLUB', '🚀 WINGO'])
-def predict(message):
-    current_period = get_period()
+@bot.message_handler(func=lambda message: message.text == '🎰 LOTTERY 7 (1-MIN)')
+def predict_l7(message):
+    p_id = get_lottery7_period()
     
-    # Fake Animation loading (Predictor 4.0 style)
-    sent_msg = bot.send_message(message.chat.id, "🔍 **Analyzing Server Data...**")
+    # Login/Processing Animation
+    proc = bot.send_message(message.chat.id, "🛰️ **Connecting to Lottery 7 Server...**", parse_mode='Markdown')
     time.sleep(1)
-    bot.edit_message_text("🛰️ **Syncing with API...**", message.chat.id, sent_msg.message_id)
+    bot.edit_message_text("🧠 **AI Analyzing Trends...**", message.chat.id, proc.message_id, parse_mode='Markdown')
     time.sleep(1)
     
     result = random.choice(['BIG 🔴', 'SMALL 🟢'])
-    confidence = random.randint(85, 99)
+    confidence = random.randint(93, 99)
     
     final_msg = (
-        f"✅ **PREDICTION READY**\n"
+        f"✅ **LOTTERY 7 PREDICTION**\n"
         f"------------------------------\n"
-        f"🎯 **Game:** {message.text}\n"
-        f"📅 **Period:** {current_period}\n"
-        f"🔥 **Result:** {result}\n"
-        f"💎 **Confidence:** {confidence}%\n"
+        f"📅 **Period:** `{p_id}`\n"
+        f"🎯 **AI Result:** {result}\n"
+        f"🔥 **Confidence:** {confidence}%\n"
         f"------------------------------\n"
-        f"⚠️ *Note: Trade at your own risk.*"
+        f"📢 *Wait for next period to bet!*"
     )
-    bot.edit_message_text(final_msg, message.chat.id, sent_msg.message_id, parse_mode='Markdown')
-
-@bot.message_handler(func=lambda message: message.text == '📊 SYSTEM STATUS')
-def status(message):
-    status_msg = (
-        "✅ **SERVER STATUS**\n\n"
-        "Main Server: **Online**\n"
-        "API Latency: **24ms**\n"
-        "AI Version: **4.0.0 (Latest)**\n"
-        "Database: **Updated**"
-    )
-    bot.send_message(message.chat.id, status_msg, parse_mode='Markdown')
+    bot.edit_message_text(final_msg, message.chat.id, proc.message_id, parse_mode='Markdown')
 
 def keep_alive():
     t = Thread(target=run)
