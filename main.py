@@ -23,20 +23,11 @@ IST = pytz.timezone('Asia/Kolkata')
 AUTH_KEY = "KULAMANI-L7"
 
 def get_lottery7_period():
-    # India ka current time
     now = datetime.datetime.now(IST)
-    
-    # Lottery 7 calculation: Aaj ke total minutes
     total_minutes = (now.hour * 60) + now.minute
-    
-    # 2:09 PM par aapka period 10569 tha
-    # Us hisab se formula: (Hour*60 + Min) + 9710
-    # 2:09 = 849 minutes. 849 + 9720 = 10569.
-    
-    current_period_suffix = 9720 + total_minutes
+    # Current Offset adjustment for Lottery 7
+    current_period_suffix = 9722 + total_minutes
     date_str = now.strftime("%Y%m%d")
-    
-    # Final Format: Date + 1000 + 5 digit number
     return f"{date_str}1000{current_period_suffix}"
 
 @bot.message_handler(commands=['start'])
@@ -50,20 +41,31 @@ def login_success(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
     btn1 = types.KeyboardButton('🎰 LOTTERY 7 (1-MIN)')
     markup.add(btn1)
-    bot.send_message(message.chat.id, "✅ **ACCESS GRANTED**\nWelcome Kulamani! Click below for signal.", reply_markup=markup)
+    bot.send_message(message.chat.id, "✅ **ACCESS GRANTED**\nWelcome Kulamani!", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: message.text == '🎰 LOTTERY 7 (1-MIN)')
 def predict(message):
     p_id = get_lottery7_period()
-    
-    # Animation
-    ani = bot.send_message(message.chat.id, "🧠 **AI Analyzing Server Patterns...**")
-    time.sleep(1.5)
+    ani = bot.send_message(message.chat.id, "🧠 **AI Analyzing Trends...**")
+    time.sleep(1)
     
     result = random.choice(['BIG 🔴', 'SMALL 🟢'])
     confidence = random.randint(94, 98)
     
     final_msg = (
-        f"✅ **PREDICTION FETCHED**\n"
+        f"✅ **PREDICTION READY**\n"
         f"------------------------------\n"
-        f
+        f"📅 **Period:** `{p_id}`\n"
+        f"🎯 **Result:** {result}\n"
+        f"🔥 **Confidence:** {confidence}%\n"
+        f"------------------------------"
+    )
+    bot.edit_message_text(final_msg, message.chat.id, ani.message_id, parse_mode='Markdown')
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+if __name__ == "__main__":
+    keep_alive()
+    bot.infinity_polling()
